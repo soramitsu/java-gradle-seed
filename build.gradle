@@ -1,0 +1,77 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'jacoco'
+    id 'maven'
+    id 'application'
+    id 'org.sonarqube' version '2.7'
+    id 'com.palantir.docker' version '0.21.0'
+}
+
+mainClassName = 'jp.co.soramitsu.Main'
+group 'jp.co.soramitsu'
+version '1.0.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" }
+}
+
+jacoco {
+    toolVersion = "0.8.2"
+    reportsDir = file("$buildDir/reports")
+}
+
+jacocoTestReport {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    reports {
+        xml.enabled true
+        xml.destination file("${buildDir}/reports/coverage.xml")
+        csv.enabled false
+        html.enabled false
+        html.destination file("${buildDir}/reports/html")
+    }
+
+    dependsOn(test)
+}
+
+
+def getGitHash = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+docker {
+    def gitVersion = getGitHash()
+    def dockerTag = [dockerNexusUrl, dockerNamespace, "${project.name}:${version}"].join("/")
+    dependsOn jar
+    dockerfile project.file('Dockerfile')
+    name dockerTag
+    files jar.archivePath
+    labels(["build": "${gitVersion}"])
+    buildArgs(['JAR_FILE': "${jar.archiveName}"])
+}
+
+sonarqube {
+    properties {
+        property "sonar.github.repository", "${gitRepository}"
+        property "sonar.host.url", "${sonarqubeUrl}"
+        property "sonar.projectKey", "${sonarqubeProjectKey}"
+        property "sonar.exclusions", "**/generated/*.java"
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.10'
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
