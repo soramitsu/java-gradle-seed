@@ -1,0 +1,17 @@
+final def gitRepository = "https://github.com/soramitsu/java-gradle-seed"
+final def sonarqubeUrl = "https://sonar.soramitsu.co.jp"
+final def sonarqubeProjectKey="soramitsu:example"
+
+
+
+sonarqube {
+    properties {
+        // don't forget to add -Dsonar.login=TOKEN in CI
+        // property "sonar.login", ""
+        property "sonar.github.repository", "${gitRepository}"
+        property "sonar.host.url", "${sonarqubeUrl}"
+
+        property "sonar.projectKey", "${sonarqubeProjectKey}"
+        property "sonar.exclusions", "**/generated/*.java"
+    }
+}

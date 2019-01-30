@@ -1,0 +1,17 @@
+// normally it is a docker username (e.g. for docker hub)
+// but for nexus it is a path/name of dir where images are stored
+final def dockerNamespace = "sora"
+
+// do not change, unless you want to use custom registry
+final def dockerRegistryUrl = "nexus.iroha.tech:19001"
+
+// for spring app change to bootJar
+def taskToDependOn = jar
+def dockerTag = [dockerRegistryUrl, dockerNamespace, "${project.name}:${version}"].join("/")
+docker {
+    dockerfile project.file('Dockerfile')
+    name dockerTag
+    files taskToDependOn.archivePath
+    buildArgs(['JAR_FILE': "${taskToDependOn.archiveName}"])
+}
+dockerPrepare.dependsOn(taskToDependOn)
